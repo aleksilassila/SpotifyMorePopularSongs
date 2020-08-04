@@ -114,7 +114,17 @@ SPTNowPlayingEntityDecorationController *decorator;
     if ([arg1 count] != 0 && [extraPopularSongComponents count] != 0)
     {
         HUBComponentModelImplementation *component = arg1[0];
-        if ([component.identifier isEqualToString:@"artist-entity-view-liked-tracks-row"] || [component.identifier isEqualToString:@"artist-entity-view-top-tracks-combined"]) {
+
+        bool isArtistPageDataSource = false;
+
+        for (HUBComponentModelImplementation *component in arg1) {
+            if ([component.identifier isEqualToString:@"artist-entity-view-top-tracks-combined"]) {
+                isArtistPageDataSource = true;
+                break;
+            }
+        }
+
+        if (isArtistPageDataSource) {
             NSMutableArray *newArray = [arg1 mutableCopy];
 
             for (int i = 0; i < [arg1 count]; i++) {
