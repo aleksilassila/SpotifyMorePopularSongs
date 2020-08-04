@@ -7,6 +7,8 @@ NSDictionary *popularTracksData;
 HUBComponentModelImplementation *moreSongsHeaderComponent;
 NSMutableArray *extraPopularSongComponents = nil;
 
+SPTNowPlayingEntityDecorationController *decorator;
+
 %subclass SpotifyMorePopularSongsAPI : NSObject
 
 %new
@@ -45,6 +47,16 @@ NSMutableArray *extraPopularSongComponents = nil;
     [%c(SpotifyMorePopularSongsAPI) updateBearerToken];
 
     return %orig;
+}
+%end
+
+%hook SPTNowPlayingEntityDecorationController
+- (id)initWithRadioManager:(id)arg1 playlistDataLoader:(id)arg2 collectionTestManager:(id)arg3 {
+    self = %orig;
+
+    decorator = self;
+
+    return self;
 }
 %end
 
@@ -113,7 +125,6 @@ NSMutableArray *extraPopularSongComponents = nil;
                     }
 
                     [newArray insertObject:moreSongsHeaderComponent atIndex:i+1];
-                    NSLog(@"Logged inserted %lu components...", (unsigned long)([extraPopularSongComponents count] + 1));
                 }
             }
 
@@ -145,7 +156,6 @@ NSMutableArray *extraPopularSongComponents = nil;
             extraPopularSongComponents = [NSMutableArray new];
 
             // Generate extra tracks
-            NSLog(@"Logged generating tracks...");
             for (int i = 5; i < [[popularTracksData objectForKey:@"tracks"] count]; i++) {
                 NSDictionary *track = [popularTracksData objectForKey:@"tracks"][i];
                 NSString *currentTrackUri = [track objectForKey:@"uri"];
@@ -153,22 +163,22 @@ NSMutableArray *extraPopularSongComponents = nil;
                 NSDictionary *events = @{
                     @"click": [[%c(HUBCommandModelImplementation) alloc] initWithName:@"playFromContext" data:@{
                         @"uri" : currentTrackUri,
-                        @"player" : @{
-                            @"context" : @{
-                                @"pages" : @[
+                        @"player": @{
+                            @"context": @{
+                                @"pages": @[
                                     @{
-                                        @"tracks" : contextTracks
+                                        @"tracks": contextTracks
                                     },
                                     @{
-                                        @"page_url" : [NSString stringWithFormat:@"hm://artistplaycontext/v1/page/spotify/artist-top-tracks-extensions/%@?exclude_uri=spotify:track:1sgDyuLooyvEML4oHspNza,spotify:track:1kKYjjfNYxE0YYgLa7vgVY,spotify:track:3Be7CLdHZpyzsVijme39cW,spotify:track:4dyrqiXUcK29hzrL2elqO3,spotify:track:2nx0EIlIKMnMgWnj40O0HQ", currentTrackUri]
+                                        @"page_url": [NSString stringWithFormat:@"hm://artistplaycontext/v1/page/spotify/artist-top-tracks-extensions/%@?exclude_uri=spotify:track:1sgDyuLooyvEML4oHspNza,spotify:track:1kKYjjfNYxE0YYgLa7vgVY,spotify:track:3Be7CLdHZpyzsVijme39cW,spotify:track:4dyrqiXUcK29hzrL2elqO3,spotify:track:2nx0EIlIKMnMgWnj40O0HQ", currentTrackUri]
                                     }
                                 ],
-                                @"uri" : [[track objectForKey:@"artists"][0] objectForKey:@"uri"]
+                                @"uri": [[track objectForKey:@"artists"][0] objectForKey:@"uri"]
                             },
-                            @"options" : @{
-                                @"skip_to" : @{
-                                    @"page_index" : @0,
-                                    @"track_uri" : currentTrackUri
+                            @"options": @{
+                                @"skip_to": @{
+                                    @"page_index": @0,
+                                    @"track_uri": currentTrackUri
                                 }
                             }
                         }
@@ -177,13 +187,14 @@ NSMutableArray *extraPopularSongComponents = nil;
                 };
 
                 NSDictionary *metadata = @{
+                    @"playing": [currentTrackUri isEqualToString:[decorator.playerState.track.URI absoluteString]] ? @1 : @0,
                     @"album_uri": [[track objectForKey:@"album"] objectForKey:@"uri"],
                     @"preview_id": [[[track objectForKey:@"preview_url"] componentsSeparatedByString:@"mp3-preview/"][1] componentsSeparatedByString:@"?"][0],
                     @"uri": currentTrackUri
                 };
 
                 // NSDictionary *loggingData = @{
-                //     @"interaction:item_id": @"artist-entity-view-top-tracks-combined_4",
+                //     @"interaction:item_id": @"artist-entity-view-top-tracks-combined_1",
                 //     @"ubi:app": @"music",
                 //     @"ubi:generator_commit": @"78f951fdd7ee8835012e762340d109995351b2c0",
                 //     @"ubi:impression": @1,
@@ -225,7 +236,7 @@ NSMutableArray *extraPopularSongComponents = nil;
 
                 [extraPopularSongComponents addObject:
                     [[%c(HUBComponentModelImplementation) alloc] 
-                    initWithIdentifier:@"artist-entity-view-top-tracks-combined_row0" type:arg2 index:arg3 groupIdentifier:arg4 componentIdentifier:arg5 componentCategory:arg6 title:[track objectForKey:@"name"] subtitle:[[track objectForKey:@"album"] objectForKey:@"name"] accessoryTitle:arg9 descriptionText:arg10 mainImageData:[
+                    initWithIdentifier:[NSString stringWithFormat:@"artist-entity-view-top-tracks-combined_row%i", i] type:arg2 index:arg3 groupIdentifier:arg4 componentIdentifier:arg5 componentCategory:arg6 title:[track objectForKey:@"name"] subtitle:[[track objectForKey:@"album"] objectForKey:@"name"] accessoryTitle:arg9 descriptionText:arg10 mainImageData:[
                         [%c(HUBComponentImageDataImplementation) alloc]
                         initWithIdentifier:nil type:0 URL:[NSURL URLWithString:[[[track objectForKey:@"album"] objectForKey:@"images"][2] objectForKey:@"url"]] placeholderIcon:nil localImage:nil customData:@{}
                     ] backgroundImageData:arg12 customImageData:arg13 icon:arg14 target:arg15 events:events metadata:metadata loggingData:arg18 customData:customData parent:arg20]
