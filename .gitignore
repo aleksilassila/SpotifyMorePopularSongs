@@ -1,0 +1,5 @@
+.theos/
+headers/
+spotify.h
+.DS_Store
+*+debug_iphoneos-arm.deb
