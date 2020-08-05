@@ -212,7 +212,6 @@ SPTPlayerState *playerState;
                 NSDictionary *metadata = @{
                     @"playing": [currentTrackUri isEqualToString:[playerState.track.URI absoluteString]] ? @1 : @0,
                     @"album_uri": [[track objectForKey:@"album"] objectForKey:@"uri"],
-                    @"preview_id": [[[track objectForKey:@"preview_url"] componentsSeparatedByString:@"mp3-preview/"][1] componentsSeparatedByString:@"?"][0],
                     @"uri": currentTrackUri
                 };
 
