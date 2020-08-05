@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Spotify More Popular Songs</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>me.aleksilassila.spotifymorepopularsongsprefs</string>
+			<key>key</key>
+			<string>Enabled</string>
+			<key>label</key>
+			<string>Enabled</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Spotify API</string>
+			<key>footerText</key>
+			<string>If my spotify API credentials don't work, add yours here</string>
+			<key>isStaticText</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>placeholder</key>
+			<string>Client ID</string>
+			<key>defaults</key>
+			<string>me.aleksilassila.spotifymorepopularsongsprefs</string>
+			<key>key</key>
+			<string>ClientID</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>placeholder</key>
+			<string>Client Secret</string>
+			<key>defaults</key>
+			<string>me.aleksilassila.spotifymorepopularsongsprefs</string>
+			<key>key</key>
+			<string>ClientSecret</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Links</string>
+			<key>footerText</key>
+			<string>Crafted with &lt;3 by aleksilassila</string>
+			<key>isStaticText</key>
+			<true/>
+			<key>footerAlignment</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>label</key>
+			<string>Source Code on Github</string>
+			<key>action</key>
+			<string>openGithub</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>label</key>
+			<string>My Homepage</string>
+			<key>action</key>
+			<string>openHomepage</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>label</key>
+			<string>Buy Me a Coffee &lt;3</string>
+			<key>action</key>
+			<string>buyMeACoffee</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>Spotify More Popular Songs</string>
+</dict>
+</plist>

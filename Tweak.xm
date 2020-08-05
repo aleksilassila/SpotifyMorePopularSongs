@@ -1,4 +1,7 @@
 #import "Tweak.h"
+#import <Cephei/HBPreferences.h>
+
+HBPreferences *preferences;
 
 NSString *bearerToken = nil;
 int statusCode = nil;
@@ -7,7 +10,9 @@ NSDictionary *popularTracksData;
 HUBComponentModelImplementation *moreSongsHeaderComponent;
 NSMutableArray *extraPopularSongComponents = nil;
 
-SPTNowPlayingEntityDecorationController *decorator;
+SPTPlayerState *playerState;
+
+%group SpotifyMorePopularSongs
 
 %subclass SpotifyMorePopularSongsAPI : NSObject
 
@@ -15,29 +20,39 @@ SPTNowPlayingEntityDecorationController *decorator;
 // Fetch api token
 + (void)updateBearerToken {
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+    NSString *authorizationHeader = @"Basic NDJmODhmY2EzYjdjNDY5MmI2OWVkMDU0NmUwZDBkZjc6ZWFkZWY3ZDI4MDlhNGMzODg3MGYzMWE5ZjAxNGM5NjY=";
+    
+    NSString *ClientID = [preferences objectForKey:@"ClientID"];
+    NSString *ClientSecret = [preferences objectForKey:@"ClientSecret"];
+    
+    if (ClientID.length && ClientSecret.length) {
+        NSData *dataToEncode = [[NSString stringWithFormat:@"%@:%@", [preferences objectForKey:@"ClientID"], [preferences objectForKey:@"ClientSecret"]]
+        dataUsingEncoding:NSUTF8StringEncoding];
+
+        authorizationHeader = [dataToEncode base64EncodedStringWithOptions:0];
+        authorizationHeader = [NSString stringWithFormat:@"Basic %@", authorizationHeader];
+    }
 
     [request setHTTPMethod:@"POST"];
-    [request addValue:@"Basic NDJmODhmY2EzYjdjNDY5MmI2OWVkMDU0NmUwZDBkZjc6ZWFkZWY3ZDI4MDlhNGMzODg3MGYzMWE5ZjAxNGM5NjY=" forHTTPHeaderField:@"Authorization"];
+    [request addValue:authorizationHeader forHTTPHeaderField:@"Authorization"];
     [request setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
     [request setHTTPBody:[@"grant_type=client_credentials" dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES]];
     [request setURL:[NSURL URLWithString:@"https://accounts.spotify.com/api/token"]];
 
-    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
-    [NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *error) {
-        if (!error) {
-            NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-            bearerToken = [responseDict objectForKey:@"access_token"];
-            NSLog(@"Logged set bearer: %@", bearerToken);
-        } else {
-            NSLog(@"Logged error setting bearer");
+    NSHTTPURLResponse *responseCode = nil;
+    NSData *responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:&responseCode error:nil];
 
-            bearerToken = nil;
-            UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"SpotifyMorePopularSongs API" message:
-                @"Looks like fetching Spotify API token failed. If there's an issue with my Spotify API project, you can create your own project at https://developer.spotify.com/dashboard/applications. It's easy. After that add your app credentials to settings."
-            delegate:nil cancelButtonTitle:nil otherButtonTitles:@"Okay", nil];
-            [alert show];
-        }
-    }];
+    if ([responseCode statusCode] == 200) {
+        NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:nil];
+        bearerToken = [responseDict objectForKey:@"access_token"];
+    } else {
+        bearerToken = nil;
+
+        UIAlertView* alert = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"More Popular Songs - Spotify API: Error %li", (long)[responseCode statusCode]] message:
+            @"Looks like fetching Spotify API token failed. If there's an issue with my Spotify API project, you can create your own project at https://developer.spotify.com/dashboard/applications. It's easy. You can add your app credentials in settings."
+            delegate:nil cancelButtonTitle:nil otherButtonTitles:@"Close", nil];
+        [alert show];
+    }
 }
 
 %end
@@ -50,11 +65,11 @@ SPTNowPlayingEntityDecorationController *decorator;
 }
 %end
 
-%hook SPTNowPlayingEntityDecorationController
-- (id)initWithRadioManager:(id)arg1 playlistDataLoader:(id)arg2 collectionTestManager:(id)arg3 {
+%hook SPTPlayerState
+- (id)initWithDictionary:(id)arg1 {
     self = %orig;
 
-    decorator = self;
+    playerState = self;
 
     return self;
 }
@@ -72,8 +87,6 @@ SPTNowPlayingEntityDecorationController *decorator;
 
         bool fetchAgain = true;
         while (fetchAgain) {
-            NSLog(@"Logged fetching artist...");
-
             NSArray *components = [[arg3 absoluteString] componentsSeparatedByString:@":"];
             NSString *artistId = components[2];
             
@@ -88,9 +101,9 @@ SPTNowPlayingEntityDecorationController *decorator;
             statusCode = [responseCode statusCode];
 
             if (statusCode == 429) {
-                UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"SpotifyMorePopularSongs API" message:
-                    @"Looks there's too many requests to Spotify API. You have to wait before using api, or you can create your own project at https://developer.spotify.com/dashboard/applications. It's easy. After that add your app credentials to settings and your tweak should work again."
-                delegate:nil cancelButtonTitle:nil otherButtonTitles:@"Okay", nil];
+                UIAlertView* alert = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"More Popular Songs - Spotify API: Error %li", (long)[responseCode statusCode]] message:
+                    @"Looks like there's too many requests to Spotify API. You have to wait before using api, or you can create your own project at https://developer.spotify.com/dashboard/applications. It's easy. You can add your app credentials in settings."
+                delegate:nil cancelButtonTitle:nil otherButtonTitles:@"Close", nil];
                 [alert show];
                 fetchAgain = false;
                 continue;
@@ -197,7 +210,7 @@ SPTNowPlayingEntityDecorationController *decorator;
                 };
 
                 NSDictionary *metadata = @{
-                    @"playing": [currentTrackUri isEqualToString:[decorator.playerState.track.URI absoluteString]] ? @1 : @0,
+                    @"playing": [currentTrackUri isEqualToString:[playerState.track.URI absoluteString]] ? @1 : @0,
                     @"album_uri": [[track objectForKey:@"album"] objectForKey:@"uri"],
                     @"preview_id": [[[track objectForKey:@"preview_url"] componentsSeparatedByString:@"mp3-preview/"][1] componentsSeparatedByString:@"?"][0],
                     @"uri": currentTrackUri
@@ -259,3 +272,18 @@ SPTNowPlayingEntityDecorationController *decorator;
 }
 
 %end
+
+%end
+
+%ctor {
+    preferences = [[HBPreferences alloc] initWithIdentifier:@"me.aleksilassila.spotifymorepopularsongsprefs"];
+    [preferences registerDefaults:@{
+        @"Enabled": @YES,
+        @"ClientID": @"",
+        @"ClientSecret": @""
+    }];
+
+    if ([preferences boolForKey:@"Enabled"] == 1) {
+        %init(SpotifyMorePopularSongs);
+    }
+}
