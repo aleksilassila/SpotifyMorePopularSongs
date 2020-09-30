@@ -1,6 +1,6 @@
 Package: me.aleksilassila.spotifymorepopularsongs
 Name: SpotifyMorePopularSongs
-Version: 0.0.2
+Version: 0.0.4
 Architecture: iphoneos-arm
 Description: Show more popular songs in Spotify artist page
 Maintainer: Aleksi Lassila

@@ -63,6 +63,12 @@ SPTPlayerState *playerState;
 
     return %orig;
 }
+
+- (id)initWithTheme:(id)arg1 forScene:(id)arg2 {    
+    [%c(SpotifyMorePopularSongsAPI) updateBearerToken];
+
+    return %orig;
+}
 %end
 
 %hook SPTPlayerState
